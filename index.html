@@ -1,401 +1,196 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FlagQuest</title>
-  <style>
-    :root {
-      --bg: #f4f7fb;
-      --panel: #ffffff;
-      --text: #1d2a39;
-      --muted: #607184;
-      --primary: #1cb0f6;
-      --primary-dark: #1899d6;
-      --green: #58cc02;
-      --green-dark: #47a700;
-      --warn: #ffb703;
-      --danger: #ff4b4b;
-      --border: #dfe8f3;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      padding: 24px 16px;
-    }
-
-    .app {
-      width: min(100%, 560px);
-      background: var(--panel);
-      border: 2px solid var(--border);
-      border-radius: 20px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-      padding: 20px;
-    }
-
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(2rem, 3vw, 2.4rem);
-      text-align: center;
-    }
-
-    .top-row, .controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 80px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #eef6ff;
-      border: 2px solid var(--border);
-      font-weight: 700;
-    }
-
-    button {
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 18px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: transform 0.12s ease;
-    }
-
-    button:active { transform: translateY(2px); }
-
-    .primary {
-      background: var(--green);
-      color: white;
-      box-shadow: 0 4px 0 var(--green-dark);
-    }
-
-    .blue {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 0 var(--primary-dark);
-    }
-
-    .secondary {
-      background: white;
-      color: var(--text);
-      border: 2px solid var(--border);
-      box-shadow: 0 4px 0 #dfe8f3;
-    }
-
-    .danger {
-      background: var(--danger);
-      color: white;
-      box-shadow: 0 4px 0 #d73737;
-    }
-
-    .quiz {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin-top: 16px;
-    }
-
-    .flag {
-      font-size: clamp(80px, 20vw, 160px);
-      text-align: center;
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-
-    .prompt {
-      text-align: center;
-      font-size: 1.1rem;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .answer-row {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-    }
-
-    input {
-      flex: 1;
-      min-width: 0;
-      padding: 14px 16px;
-      font-size: 1rem;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: var(--primary);
-    }
-
-    #feedback {
-      min-height: 24px;
-      font-weight: 700;
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .mic-on {
-      background: #d9f7e8;
-      color: #1f7a4a;
-      border: 2px solid #aee7c3;
-      box-shadow: none;
-    }
-
-    @media (max-width: 420px) {
-      .answer-row { flex-direction: column; }
-      button { width: 100%; }
-    }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <h1>🚩 FlagQuest</h1>
-
-    <div class="top-row">
-      <div class="pill" id="timer">30s</div>
-      <div class="pill" id="score">0</div>
-    </div>
-
-    <div class="controls">
-      <button class="primary" id="startBtn">Start Speed Run</button>
-      <button class="blue" id="micBtn">Mic: Off</button>
-    </div>
-
-    <div class="quiz" id="quizBox">
-      <div class="flag" id="flag">🇺🇸</div>
-      <div class="prompt">Name this country</div>
-      <div class="answer-row">
-        <input id="answer" autocomplete="off" placeholder="Type the country name" />
-        <button class="secondary" id="checkBtn">Check</button>
-      </div>
-      <div class="controls">
-        <button class="secondary" id="skipBtn">Skip</button>
-      </div>
-      <div id="feedback">Ready when you are.</div>
-    </div>
-  </div>
-
-  <script>
-    const countries = [
-      { name: 'France', flag: '🇫🇷', alt: ['france'] },
-      { name: 'Japan', flag: '🇯🇵', alt: ['japan'] },
-      { name: 'Brazil', flag: '🇧🇷', alt: ['brazil'] },
-      { name: 'Canada', flag: '🇨🇦', alt: ['canada'] },
-      { name: 'Germany', flag: '🇩🇪', alt: ['germany'] },
-      { name: 'Italy', flag: '🇮🇹', alt: ['italy'] },
-      { name: 'Spain', flag: '🇪🇸', alt: ['spain'] },
-      { name: 'Argentina', flag: '🇦🇷', alt: ['argentina'] },
-      { name: 'India', flag: '🇮🇳', alt: ['india'] },
-      { name: 'Australia', flag: '🇦🇺', alt: ['australia'] },
-      { name: 'Mexico', flag: '🇲🇽', alt: ['mexico'] },
-      { name: 'South Korea', flag: '🇰🇷', alt: ['south korea', 'korea'] },
-      { name: 'United States', flag: '🇺🇸', alt: ['united states', 'usa', 'us'] },
-      { name: 'United Kingdom', flag: '🇬🇧', alt: ['united kingdom', 'uk', 'britain'] },
-      { name: 'Egypt', flag: '🇪🇬', alt: ['egypt'] },
-      { name: 'Kenya', flag: '🇰🇪', alt: ['kenya'] },
-      { name: 'Nigeria', flag: '🇳🇬', alt: ['nigeria'] },
-      { name: 'Norway', flag: '🇳🇴', alt: ['norway'] },
-      { name: 'Sweden', flag: '🇸🇪', alt: ['sweden'] },
-      { name: 'Thailand', flag: '🇹🇭', alt: ['thailand'] },
-      { name: 'Vietnam', flag: '🇻🇳', alt: ['vietnam'] },
-      { name: 'Chile', flag: '🇨🇱', alt: ['chile'] },
-      { name: 'Peru', flag: '🇵🇪', alt: ['peru'] },
-      { name: 'Poland', flag: '🇵🇱', alt: ['poland'] },
-      { name: 'Turkey', flag: '🇹🇷', alt: ['turkey'] }
-    ];
-
-    const state = {
-      current: null,
-      score: 0,
-      timer: 30,
-      running: false,
-      interval: null,
-      speech: null,
-      micOn: false
-    };
-
-    const $ = (id) => document.getElementById(id);
-
-    function normalize(value = '') {
-      return value
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/&/g, 'and')
-        .replace(/[^a-z0-9\s]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    function updateTimer() {
-      $('timer').textContent = `${state.timer}s`;
-      $('score').textContent = String(state.score);
-    }
-
-    function chooseNextCountry() {
-      const pool = countries.filter(country => country.name !== state.current?.name);
-      state.current = pool[Math.floor(Math.random() * pool.length)] || countries[0];
-      $('flag').textContent = state.current.flag;
-      $('answer').value = '';
-      $('answer').focus();
-      $('feedback').textContent = 'Ready when you are.';
-    }
-
-    function finishRound() {
-      state.running = false;
-      clearInterval(state.interval);
-      if (state.micOn) toggleMic(false);
-      $('feedback').textContent = `Time's up! Final score: ${state.score}`;
-      $('startBtn').textContent = 'Play Again';
-    }
-
-    function tick() {
-      if (!state.running) return;
-      state.timer -= 1;
-      updateTimer();
-
-      if (state.timer <= 0) {
-        finishRound();
-      }
-    }
-
-    function startGame() {
-      state.running = true;
-      state.score = 0;
-      state.timer = 30;
-      updateTimer();
-      $('startBtn').textContent = 'Restart';
-      chooseNextCountry();
-      clearInterval(state.interval);
-      state.interval = setInterval(tick, 1000);
-    }
-
-    function handleCorrect() {
-      state.score += 1;
-      updateTimer();
-      $('feedback').textContent = `Correct! ${state.current.name}`;
-      chooseNextCountry();
-    }
-
-    function isMatch(value) {
-      const cleaned = normalize(value);
-      const target = normalize(state.current.name);
-      return cleaned === target || state.current.alt.some(item => normalize(item) === cleaned);
-    }
-
-    function checkAnswer() {
-      if (!state.running || !state.current) return;
-      const typed = $('answer').value;
-      if (!typed.trim()) return;
-
-      if (isMatch(typed)) {
-        handleCorrect();
-      } else {
-        $('feedback').textContent = `Not quite — it was ${state.current.name}.`;
-        chooseNextCountry();
-      }
-    }
-
-    function toggleMic(forceOn = null) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-      if (!SpeechRecognition) {
-        $('feedback').textContent = 'Voice input is not supported in this browser.';
-        return;
-      }
-
-      if (!state.speech) {
-        state.speech = new SpeechRecognition();
-        state.speech.lang = 'en-US';
-        state.speech.continuous = true;
-        state.speech.interimResults = true;
-
-        state.speech.onresult = (event) => {
-          let full = '';
-          for (let i = 0; i < event.results.length; i++) {
-            const result = event.results[i];
-            const transcript = result[0]?.transcript || '';
-            if (transcript) {
-              full += transcript;
-            }
-          }
-
-          if (!full.trim()) return;
-          $('answer').value = full.trim();
-
-          const lastResult = event.results[event.results.length - 1];
-          if (lastResult && lastResult.isFinal) {
-            if (state.running) checkAnswer();
-          }
-        };
-
-        state.speech.onerror = () => {
-          state.micOn = false;
-          $('micBtn').classList.remove('mic-on');
-          $('micBtn').textContent = 'Mic: Off';
-        };
-
-        state.speech.onend = () => {
-          if (state.micOn) {
-            try {
-              state.speech.start();
-            } catch (_) {
-              // ignore start errors while restarting
-            }
-          }
-        };
-      }
-
-      const shouldBeOn = forceOn !== null ? forceOn : !state.micOn;
-
-      if (shouldBeOn) {
-        try {
-          state.speech.start();
-          state.micOn = true;
-          $('micBtn').classList.add('mic-on');
-          $('micBtn').textContent = 'Mic: On';
-        } catch (_) {
-          // ignore if already started
-        }
-      } else {
-        state.speech.stop();
-        state.micOn = false;
-        $('micBtn').classList.remove('mic-on');
-        $('micBtn').textContent = 'Mic: Off';
-      }
-    }
-
-    $('startBtn').addEventListener('click', startGame);
-    $('checkBtn').addEventListener('click', checkAnswer);
-    $('skipBtn').addEventListener('click', () => {
-      if (!state.running) return;
-      $('feedback').textContent = `Skipped — it was ${state.current.name}.`;
-      chooseNextCountry();
-    });
-    $('answer').addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') checkAnswer();
-    });
-    $('micBtn').addEventListener('click', () => toggleMic());
-
-    updateTimer();
-    chooseNextCountry();
-  </script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FlagQuest</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--c:#fff;--tx:#4b4b4b;--mu:#8a8a8a;--bd:#e5e5e5;--g:#58cc02;--gd:#58a700;--b:#1cb0f6;--bb:#1899d6;--r:#ff4b4b;--rd:#ea2b2b;--y:#ffc800;--okb:#d7ffb8;--badb:#ffdfe0;--s:1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#131f24;--c:#202f36;--tx:#e5eef1;--mu:#9bb0b8;--bd:#37464f;--okb:#1d3a14;--badb:#3d1f22}}
+:root[data-theme=dark]{--bg:#131f24;--c:#202f36;--tx:#e5eef1;--mu:#9bb0b8;--bd:#37464f;--okb:#1d3a14;--badb:#3d1f22}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:700 16px/1.4 Nunito,system-ui,sans-serif;padding-bottom:96px}
+.flag,.f,.chip span{font-family:'Noto Color Emoji','Apple Color Emoji','Segoe UI Emoji',sans-serif}
+#top,main{max-width:560px;margin:0 auto;padding:12px 16px}
+#top{display:flex;align-items:center;gap:10px}
+.logo{font-weight:900;font-size:24px;color:var(--g);flex:1}
+.pill{font-weight:800;border:2px solid var(--bd);border-radius:14px;padding:4px 10px}
+h2{margin:8px 0;font-weight:900}h3{margin:16px 0 8px}
+.card{border:2px solid var(--bd);border-radius:18px;padding:16px;background:var(--c);margin-bottom:14px}
+.big{font-size:40px;font-weight:900;color:var(--g)}.big small{font-size:20px;color:var(--mu)}
+.bar{flex:1;height:16px;border-radius:9px;background:var(--bd);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--g);border-radius:9px;transition:width calc(var(--s)*.3s)}
+.btn{font:inherit;font-weight:900;text-transform:uppercase;letter-spacing:.06em;border:0;border-radius:16px;padding:14px 22px;color:#fff;background:var(--g);box-shadow:0 4px 0 var(--gd);cursor:pointer;transition:transform calc(var(--s)*.1s)}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.btn.blue{background:var(--b);box-shadow:0 4px 0 var(--bb)}
+.btn.ghost{background:var(--c);color:var(--b);border:2px solid var(--bd);box-shadow:0 4px 0 var(--bd)}
+.wide{width:100%}.sq{padding:14px 16px}
+.rec{background:var(--r)!important;box-shadow:0 4px 0 var(--rd)!important}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.chip{font:inherit;font-weight:800;white-space:nowrap;border:2px solid var(--bd);background:var(--c);color:var(--tx);border-radius:14px;padding:6px 14px;cursor:pointer}
+.chip.on{border-color:var(--b);color:var(--b);background:color-mix(in srgb,var(--b) 14%,var(--c))}
+.mode{display:flex;gap:14px;align-items:center;width:100%;text-align:left;font:inherit;color:var(--tx);border:2px solid var(--bd);border-bottom-width:5px;border-radius:18px;background:var(--c);padding:14px;margin-bottom:10px;cursor:pointer}
+.mode:active{transform:translateY(2px);border-bottom-width:3px}
+.mode>span{font-size:30px}.mode b{font-size:18px;display:block}.mode small{color:var(--mu);font-weight:700}
+#nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:8px;background:var(--bg);border-top:2px solid var(--bd);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));z-index:3}
+#nav button{flex:1;max-width:160px;font:inherit;font-weight:800;border:2px solid transparent;border-radius:14px;background:none;color:var(--mu);padding:6px;cursor:pointer}
+#nav button.on{border-color:var(--b);background:color-mix(in srgb,var(--b) 14%,var(--c));color:var(--b)}
+#nav span{display:block;font-size:22px}
+.search{width:100%;font:inherit;font-weight:700;border:2px solid var(--bd);border-radius:14px;padding:12px 14px;background:var(--c);color:var(--tx);margin-bottom:8px;outline:none}
+.search:focus{border-color:var(--b)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.tile{content-visibility:auto;contain-intrinsic-size:110px;border:2px solid var(--bd);border-radius:14px;padding:8px 4px;text-align:center;background:var(--c)}
+.tile.k{border-color:var(--g)}.tile .f{font-size:38px;line-height:1.2;display:block}.tile b{display:block;font-size:13px;line-height:1.2}.tile small{color:var(--mu);font-size:11px}
+.lt{font-weight:900;font-size:20px;color:var(--b);margin:14px 0 6px;scroll-margin-top:12px}
+.jump{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:6px}.jump button{font:inherit;font-weight:900;color:var(--b);background:none;border:0;padding:3px 5px;cursor:pointer}
+.row{margin-bottom:18px}.seg{display:flex;gap:6px;margin-top:6px}
+.seg button{flex:1;font:inherit;font-weight:800;border:2px solid var(--bd);background:var(--c);color:var(--tx);border-radius:12px;padding:8px 4px;cursor:pointer}
+.seg button.on{border-color:var(--b);color:var(--b);background:color-mix(in srgb,var(--b) 14%,var(--c))}
+.mu{color:var(--mu)}
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(12px + env(safe-area-inset-bottom,0px));overflow:auto;z-index:5}
+.qh{display:flex;align-items:center;gap:12px;width:100%;max-width:560px;margin:0 auto}
+.x{font:inherit;font-size:22px;font-weight:900;color:var(--mu);background:none;border:0;cursor:pointer}
+.qc{font-weight:900;min-width:64px;text-align:right}
+.qm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:100%;max-width:520px;margin:0 auto;text-align:center}
+.flag{font-size:clamp(110px,36vw,180px);line-height:1.1}
+.inrow{display:flex;gap:8px;width:100%}.inrow input{flex:1;min-width:0;font:inherit;font-size:18px;font-weight:700;border:2px solid var(--bd);border-radius:16px;padding:14px;background:var(--c);color:var(--tx);outline:none;text-align:center}
+.inrow input:focus{border-color:var(--b)}
+.acts{display:flex;gap:10px;width:100%}.acts .btn{flex:1}
+#hnt{min-height:24px;color:var(--mu);letter-spacing:.15em}
+.fb{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(110%);transition:transform calc(var(--s)*.22s);z-index:6}
+.fb.show{transform:none}.fb.ok{background:var(--okb);color:var(--gd)}.fb.bad{background:var(--badb);color:var(--rd)}
+.fb.bad .btn{background:var(--r);box-shadow:0 4px 0 var(--rd)}
+#ft{font-size:22px;font-weight:900}#fa{font-size:17px}
+.stats{display:flex;gap:10px;margin:14px 0}.stats div{flex:1;border:2px solid var(--bd);border-radius:14px;padding:10px;font-size:13px}.stats b{display:block;font-size:26px;color:var(--g)}
+.rv{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.rv span{border:2px solid var(--bd);border-radius:12px;padding:4px 10px;font-size:14px}
+.rc{text-align:center;max-width:520px;margin:auto;width:100%}.ra{display:flex;gap:10px;max-width:520px;margin:12px auto 0;width:100%}.ra .btn{flex:1}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:14px;z-index:9;font-weight:800;max-width:90%;text-align:center}
+@keyframes in{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes shake{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+@keyframes pop{50%{transform:scale(1.12)}}
+.anim{animation:in calc(var(--s)*.28s) both}.shake{animation:shake calc(var(--s)*.35s)}.pop{animation:pop calc(var(--s)*.3s)}
+</style></head><body>
+<div id="top"><span class="logo">🚩 FlagQuest</span><span class="pill" id="streak"></span><span class="pill" id="xp"></span></div>
+<main id="home"></main><main id="idx" hidden></main><main id="set" hidden></main>
+<nav id="nav"><button data-a="go" data-v="home"><span>🏠</span>Learn</button><button data-a="go" data-v="idx"><span>📖</span>Index</button><button data-a="go" data-v="set"><span>⚙️</span>Settings</button></nav>
+<section id="quiz" class="ov" hidden>
+<div class="qh"><button class="x" data-a="quit">✕</button><div class="bar"><i id="qb"></i></div><span class="qc" id="qc"></span></div>
+<div class="qm"><div class="mu" id="cnt"></div><div id="flag" class="flag"></div>
+<div class="inrow"><input id="inp" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type the country name"><button id="mic" class="btn blue sq" data-a="mic" aria-label="Toggle voice answers">🎤 Off</button></div>
+<div class="acts"><button class="btn ghost" data-a="skip">Skip</button><button class="btn ghost" data-a="hint">💡 Hint</button><button class="btn" data-a="check">Check</button></div>
+<div id="hnt"></div><div id="hrd" class="mu" style="min-height:22px"></div></div>
+<div id="fb" class="fb"><div><div id="ft"></div><div id="fa"></div></div><button class="btn" data-a="cont">Continue</button></div>
+</section>
+<section id="learn" class="ov" hidden></section><section id="res" class="ov" hidden></section>
+<script>
+const CONTS=['Africa','Asia','Europe','North America','South America','Oceania'];
+const RAW={
+Africa:`DZ Algeria;AO Angola;BJ Benin;BW Botswana;BF Burkina Faso;BI Burundi;CV Cape Verde|Cabo Verde;CM Cameroon;CF Central African Republic|CAR;TD Chad;KM Comoros;CG Republic of the Congo|Congo,Congo-Brazzaville;CD DR Congo|Democratic Republic of the Congo,Congo-Kinshasa;CI Ivory Coast|Cote d'Ivoire;DJ Djibouti;EG Egypt;GQ Equatorial Guinea;ER Eritrea;SZ Eswatini|Swaziland;ET Ethiopia;GA Gabon;GM Gambia|The Gambia;GH Ghana;GN Guinea;GW Guinea-Bissau;KE Kenya;LS Lesotho;LR Liberia;LY Libya;MG Madagascar;MW Malawi;ML Mali;MR Mauritania;MU Mauritius;MA Morocco;MZ Mozambique;NA Namibia;NE Niger;NG Nigeria;RW Rwanda;ST Sao Tome and Principe;SN Senegal;SC Seychelles;SL Sierra Leone;SO Somalia;ZA South Africa;SS South Sudan;SD Sudan;TZ Tanzania;TG Togo;TN Tunisia;UG Uganda;ZM Zambia;ZW Zimbabwe`,
+Asia:`AF Afghanistan;AM Armenia;AZ Azerbaijan;BH Bahrain;BD Bangladesh;BT Bhutan;BN Brunei;KH Cambodia;CN China;CY Cyprus;GE Georgia;IN India;ID Indonesia;IR Iran;IQ Iraq;IL Israel;JP Japan;JO Jordan;KZ Kazakhstan;KW Kuwait;KG Kyrgyzstan;LA Laos;LB Lebanon;MY Malaysia;MV Maldives;MN Mongolia;MM Myanmar|Burma;NP Nepal;KP North Korea;OM Oman;PK Pakistan;PS Palestine;PH Philippines;QA Qatar;SA Saudi Arabia;SG Singapore;KR South Korea|Korea;LK Sri Lanka;SY Syria;TW Taiwan;TJ Tajikistan;TH Thailand;TL Timor-Leste|East Timor;TR Turkey|Turkiye;TM Turkmenistan;AE United Arab Emirates|UAE;UZ Uzbekistan;VN Vietnam;YE Yemen`,
+Europe:`AL Albania;AD Andorra;AT Austria;BY Belarus;BE Belgium;BA Bosnia and Herzegovina|Bosnia;BG Bulgaria;HR Croatia;CZ Czechia|Czech Republic;DK Denmark;EE Estonia;FI Finland;FR France;DE Germany;GR Greece;HU Hungary;IS Iceland;IE Ireland;IT Italy;XK Kosovo;LV Latvia;LI Liechtenstein;LT Lithuania;LU Luxembourg;MT Malta;MD Moldova;MC Monaco;ME Montenegro;NL Netherlands|Holland;MK North Macedonia|Macedonia;NO Norway;PL Poland;PT Portugal;RO Romania;RU Russia;SM San Marino;RS Serbia;SK Slovakia;SI Slovenia;ES Spain;SE Sweden;CH Switzerland;UA Ukraine;GB United Kingdom|UK,Britain,Great Britain,England;VA Vatican City|Vatican,Holy See`,
+'North America':`AG Antigua and Barbuda|Antigua;BS Bahamas|The Bahamas;BB Barbados;BZ Belize;CA Canada;CR Costa Rica;CU Cuba;DM Dominica;DO Dominican Republic;SV El Salvador;GD Grenada;GT Guatemala;HT Haiti;HN Honduras;JM Jamaica;MX Mexico;NI Nicaragua;PA Panama;KN Saint Kitts and Nevis|St Kitts,St Kitts and Nevis;LC Saint Lucia|St Lucia;VC Saint Vincent and the Grenadines|St Vincent;TT Trinidad and Tobago|Trinidad;US United States|USA,US,America,United States of America`,
+'South America':`AR Argentina;BO Bolivia;BR Brazil;CL Chile;CO Colombia;EC Ecuador;GY Guyana;PY Paraguay;PE Peru;SR Suriname;UY Uruguay;VE Venezuela`,
+Oceania:`AU Australia;FJ Fiji;KI Kiribati;MH Marshall Islands;FM Micronesia|Federated States of Micronesia;NR Nauru;NZ New Zealand;PW Palau;PG Papua New Guinea;WS Samoa;SB Solomon Islands;TO Tonga;TV Tuvalu;VU Vanuatu`};
+const D=[];for(const k in RAW)RAW[k].split(';').forEach(s=>{const[a,b='']=s.split('|'),c=a.slice(0,2),n=a.slice(3);D.push({c,n,k,a:[n,...b.split(',').filter(Boolean)],f:String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0)))})});
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,'and').replace(/\bst\b\.?/g,'saint').replace(/\b(the|of)\b/g,'').replace(/[^a-z0-9]/g,'');
+const NM=new Map();D.forEach(x=>x.a.forEach(a=>NM.set(norm(a),x.c)));
+function lev(a,b){let p=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){const c=[i];for(let j=1;j<=b.length;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]==b[j-1]?0:1));p=c}return p[b.length]}
+function match(inp,x){const n=norm(inp);if(!n)return false;if(NM.get(n)==x.c)return true;if(!S.tol||NM.has(n))return false;return x.a.some(a=>{const m=norm(a),t=m.length<5?0:m.length<9?1:2;return lev(m,n)<=t})}
+let S={p:{},xp:0,days:0,last:'',best:{},anim:'normal',snd:1,tol:1,theme:'auto',mic:0,vl:'en-US'};
+try{Object.assign(S,JSON.parse(localStorage.getItem('fq1')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('fq1',JSON.stringify(S))}catch(e){}};
+const $=i=>document.getElementById(i),SP={off:0,slow:1.8,normal:1,fast:.45};
+const M={practice:{t:'Practice',d:'No timer. Missed flags come back until you know them.',i:'🎯'},blitz:{t:'Blitz',d:'60 seconds. Name as many as you can.',i:'⚡',time:60},marathon:{t:'Marathon',d:'5 minutes on the clock.',i:'⏱️',time:300},survival:{t:'Survival',d:'3 hearts. Each mistake costs one.',i:'❤️',lives:3},speedrun:{t:'Speedrun',d:'Every flag against the stopwatch. +5s per miss.',i:'🏁'}};
+let Q={},L={},cont='All',iq='',ist='all',ac;
+const pool=()=>cont=='All'?D:D.filter(x=>x.k==cont),known=x=>S.p[x.c]>0;
+const rnd=a=>a.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const order=p=>p.map(x=>[(known(x)?1:0)+Math.random()*1.3,x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+function toast(t){const e=document.createElement('div');e.className='toast anim';e.textContent=t;document.body.append(e);setTimeout(()=>e.remove(),2200)}
+function snd(ok){if(!S.snd)return;try{ac=ac||new AudioContext();const t=ac.currentTime;(ok?[660,880]:[220,165]).forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.type=ok?'sine':'triangle';g.gain.setValueAtTime(.12,t+i*.09);g.gain.exponentialRampToValueAtTime(.001,t+i*.09+.18);o.connect(g);g.connect(ac.destination);o.start(t+i*.09);o.stop(t+i*.09+.2)})}catch(e){}}
+function apply(){document.documentElement.style.setProperty('--s',SP[S.anim]);S.theme=='auto'?delete document.documentElement.dataset.theme:document.documentElement.dataset.theme=S.theme}
+function stat(){const t=new Date().toLocaleDateString('en-CA'),y=new Date(Date.now()-864e5).toLocaleDateString('en-CA');$('streak').textContent='🔥 '+((S.last==t||S.last==y)?S.days:0);$('xp').textContent='⭐ '+S.xp}
+function show(id){if(id!='quiz')stopV();['home','idx','set','quiz','learn','res'].forEach(s=>$(s).hidden=s!=id);const full=['quiz','learn','res'].includes(id);$('top').hidden=$('nav').hidden=full;document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==id));if(!full){stat();id=='home'?home():id=='idx'?idx():sets();scrollTo(0,0)}}
+function home(){const kn=D.filter(known).length,bs=k=>S.best[k]?' · Best: '+(k=='speedrun'?fmt(S.best[k]):S.best[k]):'';
+$('home').innerHTML=`<div class="card anim"><b>Flags you know</b><div class="big">${kn}<small> / ${D.length}</small></div><div class="bar"><i style="width:${kn/D.length*100}%"></i></div></div>
+<div class="acts" style="margin-bottom:14px"><button class="btn blue" data-a="learn">📘 Learn</button><button class="btn blue" data-a="cards">🃏 Flashcards</button></div>
+<div class="chips">${['All',...CONTS].map(c=>`<button class="chip ${c==cont?'on':''}" data-a="cn" data-v="${c}">${c}</button>`).join('')}</div>
+${Object.entries(M).map(([k,m])=>`<button class="mode" data-a="play" data-v="${k}"><span class="f">${m.i}</span><div><b>${m.t}</b><small>${m.d}${bs(k)}</small></div></button>`).join('')}`}
+function play(mode,pl){const m=M[mode],p=pl||pool();Q={mode,m,pool:p,queue:order(p),right:0,wrong:0,skip:0,xp:0,lives:m.lives||0,left:m.time||0,miss:[],done:new Set(),pen:0,t0:Date.now(),fb:0,over:0,el:0};show('quiz');clearInterval(Q.iv);if(m.time||mode=='speedrun')Q.iv=setInterval(tick,250);next()}
+function tick(){if(Q.over)return;Q.el=(Date.now()-Q.t0)/1000;if(Q.m.time){Q.left=Math.max(0,Q.m.time-Q.el);if(Q.left<=0)return finish()}ui()}
+function ui(){const m=Q.m;let c,w;if(m.time){c='⏱ '+fmt(Q.left);w=Q.left/m.time}else if(m.lives){c='❤️ '+Q.lives;w=Q.lives/m.lives}else{c=Q.mode=='speedrun'?'⏱ '+fmt(Q.el+Q.pen):'✓ '+Q.done.size;w=Q.done.size/Q.pool.length}
+$('qc').textContent=c;$('qb').style.width=w*100+'%';$('cnt').textContent='✓ '+Q.right+' correct'}
+function next(){clearTimeout(Q.at);if(Q.over)return;if(!Q.queue.length){if(Q.m.time||Q.m.lives)Q.queue=order(Q.pool);else return finish()}Q.cur=Q.queue.shift();Q.fb=0;Q.hint=0;const f=$('flag');f.textContent=Q.cur.f;f.className='flag';void f.offsetWidth;f.className='flag anim';$('inp').value='';$('hnt').textContent='';$('hrd').textContent=S.mic?'🎤 Listening… say the country, “skip” or “hint”':'';$('fb').className='fb';if(!S.mic)$('inp').focus({preventScroll:true});ui();restartV()}
+function answer(r){if(Q.fb||Q.over)return;Q.fb=1;const c=Q.cur,ok=r=='ok',fb=$('fb');
+if(ok){S.p[c.c]=(S.p[c.c]||0)+1;Q.right++;Q.done.add(c.c);const g=Q.hint?5:10;Q.xp+=g;S.xp+=g}
+else{S.p[c.c]=0;Q.wrong++;if(r=='skip')Q.skip++;if(!Q.miss.includes(c))Q.miss.push(c);if(Q.m.lives)Q.lives--;if(Q.mode=='speedrun')Q.pen+=5;if(Q.mode=='practice')Q.queue.splice(Math.min(4,Q.queue.length),0,c)}
+save();snd(ok);fb.className='fb show '+(ok?'ok':'bad');$('ft').textContent=ok?'Correct!':r=='skip'?'Here’s the answer':'Not quite';$('fa').textContent=ok?c.n:c.n+' · '+c.k;
+const f=$('flag');f.className='flag '+(ok?'pop':'shake');ui();$('inp').blur();
+if(ok)Q.at=setTimeout(go,Math.max(450,750*SP[S.anim]));else if(Q.m.time||S.mic)Q.at=setTimeout(go,Q.m.time?1600:2000)}
+function go(){if(!Q.fb)return;if(Q.m.lives&&Q.lives<=0)return finish();next()}
+function check(){if(Q.fb)return;const v=$('inp').value;if(!v.trim())return;heard([v],1)?answer('ok'):answer('bad')}
+function finish(){if(Q.over)return;Q.over=1;clearInterval(Q.iv);clearTimeout(Q.at);$('fb').className='fb';const k=Q.mode,all=Q.done.size==Q.pool.length;let nb='';
+if(k=='speedrun'){const t=Math.round(Q.el+Q.pen);if(all&&(!S.best[k]||t<S.best[k])){S.best[k]=t;nb=1}}else if(k!='practice'&&Q.right>(S.best[k]||0)){S.best[k]=Q.right;nb=1}
+if(Q.right+Q.wrong>0){const t=new Date().toLocaleDateString('en-CA'),y=new Date(Date.now()-864e5).toLocaleDateString('en-CA');if(S.last!=t){S.days=S.last==y?S.days+1:1;S.last=t}}
+save();const miss=Q.miss.slice(),acc=Q.right+Q.wrong?Math.round(Q.right/(Q.right+Q.wrong)*100):0;
+$('res').innerHTML=`<div class="rc anim"><div class="flag" style="font-size:80px">${nb?'🏆':'🎉'}</div><h2>${k=='blitz'||k=='marathon'?Q.right+' flags in '+fmt(Q.m.time):k=='speedrun'?(all?'Finished in '+fmt(Q.el+Q.pen):'Speedrun ended'):'Round complete!'}</h2>${nb?'<div style="color:var(--y);font-weight:900">New personal best!</div>':''}
+<div class="stats"><div><b>${Q.right}</b>correct</div><div><b>${Q.wrong}</b>missed</div><div><b>${acc}%</b>accuracy</div><div><b>+${Q.xp}</b>XP</div></div>
+<p class="mu">You know ${D.filter(known).length} of ${D.length} flags</p>
+${miss.length?`<h3>Review these</h3><div class="rv">${miss.map(x=>`<span><span class="f">${x.f}</span> ${x.n}</span>`).join('')}</div>`:''}</div>
+<div class="ra">${miss.length?'<button class="btn blue" data-a="again">Practice missed</button>':''}<button class="btn" data-a="go" data-v="home">Done</button></div>`;
+Q.missed=miss;show('res')}
+function learn(){$('learn').dataset.m='';let p=pool(),l=rnd(p.filter(x=>!known(x))).slice(0,8);if(!l.length)l=rnd(p).slice(0,8);L={l,i:0};show('learn');lc()}
+function lc(){const x=L.l[L.i],last=L.i==L.l.length-1;$('learn').innerHTML=`<div class="qh"><button class="x" data-a="go" data-v="home">✕</button><div class="bar"><i style="width:${(L.i+1)/L.l.length*100}%"></i></div><span class="qc">${L.i+1}/${L.l.length}</span></div>
+<div class="qm"><div class="flag anim">${x.f}</div><h2 class="anim" style="font-size:30px">${x.n}</h2><div class="mu">${x.k}</div><button class="btn ghost" data-a="say">🔊 Hear it</button></div>
+<div class="ra">${L.i?'<button class="btn ghost" data-a="lb">Back</button>':''}<button class="btn" data-a="ln">${last?'Test me':'Next'}</button></div>`}
+let C={d:[],i:0,sh:0};
+function cards(){C={d:order(pool()),i:0,sh:0,h:[]};$('learn').dataset.m='c';show('learn');cc()}
+function cc(){const x=C.d[C.i];if(!x){$('learn').innerHTML=`<div class="qh"><button class="x" data-a="go" data-v="home">✕</button><div class="bar"><i style="width:100%"></i></div></div><div class="qm"><div class="flag">🎉</div><h2>Deck complete!</h2><p class="mu">You went through ${C.d.length} flags.</p></div><div class="ra">${C.h.length?'<button class="btn ghost" data-a="cb">Back</button>':''}<button class="btn ghost" data-a="cards">Restart</button><button class="btn" data-a="go" data-v="home">Done</button></div>`;return}
+$('learn').innerHTML=`<div class="qh"><button class="x" data-a="go" data-v="home">✕</button><div class="bar"><i style="width:${C.i/C.d.length*100}%"></i></div><span class="qc">${C.i+1}/${C.d.length}</span></div>
+<div class="qm"><div class="flag${C.sh?'':' anim'}" data-a="flip" style="cursor:pointer">${x.f}</div>${C.sh?`<h2 class="anim" style="font-size:30px">${x.n}</h2><div class="mu">${x.k}</div><button class="btn ghost" data-a="say2">🔊 Hear it</button>`:'<div class="mu">Tap the flag to see the answer</div>'}</div>
+<div class="ra">${C.h.length?'<button class="btn ghost" data-a="cb" style="padding:14px 12px">Back</button>':''}<button class="btn ghost" data-a="cs" style="padding:14px 12px">Skip</button><button class="btn" style="padding:14px 12px" data-a="${C.sh?'cnx':'flip'}">${C.sh?'Next':'Show answer'}</button></div>`}
+document.addEventListener('keydown',e=>{if($('learn').hidden||$('learn').dataset.m!='c'||!C.d[C.i])return;if(['Enter',' ','ArrowRight'].includes(e.key)){e.preventDefault();C.sh?act.cnx():act.flip()}else if(e.key=='ArrowLeft')act.cb();else if(e.key=='s')act.cs()});
+function idx(){$('idx').innerHTML=`<h2>Flag index</h2><input id="sq" class="search" placeholder="Search countries or continents" value="${iq}"><div class="chips">${[['all','All'],['k','Known'],['l','Still learning']].map(([v,l])=>`<button class="chip ${ist==v?'on':''}" data-a="ist" data-v="${v}">${l}</button>`).join('')}</div><div id="ig"></div>`;ig()}
+function ig(){const q=norm(iq),l=D.filter(x=>(ist=='all'||(ist=='k')==known(x))&&(!q||x.a.concat(x.k).some(a=>norm(a).includes(q)))).sort((a,b)=>a.n.localeCompare(b.n));let h='',c='',ls=[];
+l.forEach(x=>{const z=x.n[0];if(z!=c){if(c)h+='</div>';c=z;ls.push(z);h+=`<div class="lt" id="L${z}">${z}</div><div class="grid">`}h+=`<div class="tile${known(x)?' k':''}"><span class="f">${x.f}</span><b>${x.n}</b><small>${x.k}</small></div>`});
+$('ig').innerHTML=l.length?`<div class="mu">${l.length} shown · ${D.filter(known).length} known</div><div class="jump">${ls.map(z=>`<button data-a="jmp" data-v="${z}">${z}</button>`).join('')}</div>${h}</div>`:'<p class="mu">No flags match.</p>'}
+function sets(){const sg=(k,o)=>`<div class="seg">${o.map(([v,l])=>`<button class="${S[k]==v?'on':''}" data-a="set" data-k="${k}" data-v="${v}">${l}</button>`).join('')}</div>`;
+$('set').innerHTML=`<h2>Settings</h2><div class="row"><b>Animation speed</b>${sg('anim',[['off','Off'],['slow','Slow'],['normal','Normal'],['fast','Fast']])}</div>
+<div class="row"><b>Sound effects</b>${sg('snd',[[1,'On'],[0,'Off']])}</div><div class="row"><b>Voice answers (mic)</b>${sg('mic',[[1,'On'],[0,'Off']])}<p class="mu">Always listening in quizzes. Right answer → next flag. Wrong answer → shows it, then skips. Say “skip” or “hint” any time.</p></div><div class="row"><b>Voice accent</b>${sg('vl',[['en-US','US'],['en-GB','UK'],['en-PH','PH'],['en-AU','AU']])}</div><div class="row"><b>Forgive small typos</b>${sg('tol',[[1,'On'],[0,'Off']])}</div>
+<div class="row"><b>Theme</b>${sg('theme',[['auto','Auto'],['light','Light'],['dark','Dark']])}</div>
+<div class="row"><b>Progress</b><p class="mu">${D.filter(known).length} of ${D.length} flags known · ${S.xp} XP</p><button class="btn red wide" style="background:var(--r);box-shadow:0 4px 0 var(--rd)" data-a="reset">Reset progress</button></div>`}
+const act={
+go:v=>show(v),cn:v=>{cont=v;home()},play:v=>play(v),learn,quit:()=>finish(),mic,check,
+skip:()=>Q.fb||answer('skip'),hint:()=>{if(Q.fb)return;Q.hint=1;$('hnt').textContent=Q.cur.n.split('').map((c,i)=>i==0||c==' '?c:'_').join(' ')+' · '+Q.cur.k},
+say:()=>{try{speechSynthesis.speak(new SpeechSynthesisUtterance(L.l[L.i].n))}catch(e){}},lb:()=>{L.i--;lc()},ln:()=>{L.i<L.l.length-1?(L.i++,lc()):play('practice',L.l)},
+again:()=>play('practice',Q.missed),ist:v=>{ist=v;idx()},jmp:v=>$('L'+v).scrollIntoView({block:'start'}),
+set:(v,t)=>{S[t.dataset.k]=/^\d$/.test(v)?+v:v;save();apply();sets()},
+reset:(v,t)=>{if(t.dataset.c){S.p={};S.xp=0;S.days=0;S.last='';S.best={};save();sets();toast('Progress reset')}else{t.dataset.c=1;t.textContent='Tap again to confirm'}}};
+act.cont=go;
+Object.assign(act,{cards,flip:()=>{if(!C.sh){C.sh=1;cc()}},cnx:()=>{C.h.push(C.d[C.i]);C.i++;C.sh=0;cc()},cs:()=>{C.h.push(C.d[C.i]);C.d.push(C.d.splice(C.i,1)[0]);C.sh=0;cc()},cb:()=>{if(!C.h.length)return;const x=C.h.pop(),k=C.d.indexOf(x);C.d.splice(k,1);if(k<C.i)C.i--;C.d.splice(C.i,0,x);C.sh=0;cc()},say2:()=>{try{speechSynthesis.speak(new SpeechSynthesisUtterance(C.d[C.i].n))}catch(e){}}});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(t&&act[t.dataset.a])act[t.dataset.a](t.dataset.v,t)});
+document.addEventListener('input',e=>{if(e.target.id=='sq'){iq=e.target.value;ig()}});
+document.addEventListener('keydown',e=>{if(e.key=='Enter'&&!$('quiz').hidden){e.preventDefault();Q.fb?go():check()}});
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const FILL=['uh','um','hmm','ah','oh','er','the','a','it','is','its',"it's",'this','that','flag','of','i','think','maybe','so','well','okay'];
+const ph=s=>norm(s).replace(/ph/g,'f').replace(/ck|c(?=[aou])|q/g,'k').replace(/c/g,'s').replace(/x/g,'ks').replace(/z/g,'s').replace(/d/g,'t').replace(/b/g,'p').replace(/(.)\1+/g,'$1').replace(/(?!^)[aeiouyhw]/g,'');
+const PM={},AMB=new Set();D.forEach(x=>x.a.forEach(a=>{const k=ph(a),n=norm(a);(PM[k]=PM[k]||new Set()).add(x.c);NM.forEach((c,m)=>{if(c!=x.c&&m.startsWith(n))AMB.add(x.c)})}));
+function best(t){const w=t.toLowerCase().replace(/[^\p{L}' -]/gu,' ').split(/\s+/).filter(Boolean);for(let l=Math.min(6,w.length);l>0;l--)for(let i=0;i+l<=w.length;i++){const c=NM.get(norm(w.slice(i,i+l).join(' ')));if(c)return c}return 0}
+function heard(al,fin){const c=Q.cur;for(const a of al)if(match(a,c)||best(a)==c.c)return 1;if(fin)for(const a of al){const k=ph(a),s=PM[k];if(k.length>2&&s&&s.size==1&&s.has(c.c))return 1}return 0}
+const V={r:null,fail:0};
+function vb(){const m=$('mic');m.className='btn sq '+(S.mic?'rec':'blue');m.textContent=S.mic?'🎤 On':'🎤 Off'}
+function stopV(){const r=V.r;V.r=null;if(r)try{r.abort()}catch(e){}}
+function restartV(){vb();if(!S.mic)return;if(V.r){try{V.r.abort()}catch(e){V.r=null;startV()}}else startV()}
+function startV(){if(!S.mic||V.r||$('quiz').hidden||Q.over)return;if(!SR){S.mic=0;save();vb();return toast('Voice input isn’t supported in this browser. Try Chrome, Edge or Safari.')}
+const r=new SR();V.r=r;r.lang=S.vl;r.continuous=true;r.interimResults=true;r.maxAlternatives=8;r.onstart=()=>{V.fail=0};
+r.onresult=e=>{if(V.r!==r||Q.fb||Q.over||!Q.cur)return;for(let i=e.resultIndex;i<e.results.length;i++){const R=e.results[i],al=[...R].map(a=>a.transcript.trim()).filter(Boolean);if(!al.length)continue;$('hrd').textContent='🎤 '+al[0];
+if((R.isFinal||!AMB.has(Q.cur.c))&&heard(al,R.isFinal))return answer('ok');if(!R.isFinal)continue;
+const t=al[0],b=best(t),cf=R[0].confidence;if(!b&&/\b(skip|pass|next|don'?t know|do not know|no idea|give up)\b/i.test(t))return answer('skip');if(!b&&/\bhint\b/i.test(t)){act.hint();continue}
+if(norm(t).length<2||t.toLowerCase().split(/\s+/).every(w=>FILL.includes(w))||(cf>0&&cf<.3&&!b)){$('hrd').textContent='🎤 Didn’t catch that – try again';continue}return answer('bad')}};
+r.onerror=e=>{const c=e.error;if(c=='not-allowed'||c=='service-not-allowed'||c=='audio-capture'){S.mic=0;save();stopV();vb();toast(c=='audio-capture'?'No microphone found':'Microphone blocked – allow access to use voice')}else if(c=='network'&&++V.fail>3){S.mic=0;save();stopV();vb();toast('Voice service unreachable – check your connection')}};
+r.onend=()=>{if(V.r===r){V.r=null;if(S.mic&&!$('quiz').hidden&&!Q.over)setTimeout(startV,V.fail?900:200)}};try{r.start()}catch(e){V.r=null}}
+function mic(){S.mic=S.mic?0:1;save();vb();if(S.mic){$('hrd').textContent='🎤 Listening…';startV()}else{$('hrd').textContent='';stopV()}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopV();else if(!$('quiz').hidden&&S.mic&&!Q.over)startV()});
+apply();show('home');
+</script></body></html>
